@@ -311,14 +311,14 @@
       </div>
     </div>
     <div class="divider"></div>
-    <button class="dl-btn" id="dlBtn">↓ CSVをダウンロード</button>
+    <button class="dl-btn" id="dlBtn">↓ Excelをダウンロード</button>
   </div>
 </main>
 
 <footer>// C列比較ツール — vercel ready</footer>
 
 <script>
-let csvData = null, xlsxData = null, resultCSV = null;
+let csvData = null, xlsxData = null, resultRows = null;
 
 function showStatus(msg, type) {
   const el = document.getElementById('status');
@@ -425,22 +425,20 @@ document.getElementById('runBtn').addEventListener('click', () => {
     const dupXLSX = xlsxData.filter(v => csvSet.has(v));
     const noDupXLSX = xlsxData.filter(v => !csvSet.has(v));
 
-    const lines = ['CSV_C列,XLSX_C列'];
+    // 出力データ配列を作成
+    const rows = [['CSV_C列', 'XLSX_C列']];
 
     // 重複行：同じASINを同じ行に並べる
     for (let i = 0; i < dupCSV.length; i++) {
-      const a = dupCSV[i].replace(/"/g, '""');
-      lines.push('"' + a + '","' + a + '"');
+      rows.push([dupCSV[i], dupCSV[i]]);
     }
 
     // 非重複：CSV側とXLSX側をそれぞれ後ろに追加
     const maxNodup = Math.max(noDupCSV.length, noDupXLSX.length);
     for (let i = 0; i < maxNodup; i++) {
-      const a = (noDupCSV[i] ?? '').replace(/"/g, '""');
-      const b = (noDupXLSX[i] ?? '').replace(/"/g, '""');
-      lines.push('"' + a + '","' + b + '"');
+      rows.push([noDupCSV[i] ?? '', noDupXLSX[i] ?? '']);
     }
-    resultCSV = lines.join('\n');
+    resultRows = rows;
 
     document.getElementById('sCSV').textContent = csvData.length;
     document.getElementById('sXLSX').textContent = xlsxData.length;
@@ -453,17 +451,11 @@ document.getElementById('runBtn').addEventListener('click', () => {
 });
 
 document.getElementById('dlBtn').addEventListener('click', () => {
-  if (!resultCSV) return;
-  const bom = '\uFEFF';
-  const blob = new Blob([bom + resultCSV], {type:'text/csv;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'result.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  if (!resultRows) return;
+  const ws = XLSX.utils.aoa_to_sheet(resultRows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '重複チェック結果');
+  XLSX.writeFile(wb, 'result.xlsx');
 });
 </script>
 </body>
