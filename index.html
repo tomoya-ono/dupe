@@ -269,7 +269,7 @@
 <header>
   <div class="tag">C列 重複チェックツール</div>
   <h1>CSV <span>×</span> XLSX<br>Comparator</h1>
-  <p class="subtitle">CSVとXLSXのC列（2行目以降）を比較し、重複を先頭に並べた新しいCSVを生成します。</p>
+  <p class="subtitle">CSVとXLSXのC列（2行目以降）を比較し、重複を先頭に並べた新しいExcelファイルを生成します。</p>
 </header>
 
 <main class="main">
@@ -318,7 +318,7 @@
 <footer>// C列比較ツール — vercel ready</footer>
 
 <script>
-let csvData = null, xlsxData = null, resultRows = null;
+let csvData = null, xlsxData = null, resultRows = null, resultDupCount = 0;
 
 function showStatus(msg, type) {
   const el = document.getElementById('status');
@@ -331,7 +331,7 @@ function updateBtn() {
   const btn = document.getElementById('runBtn');
   if (csvData && xlsxData) {
     btn.disabled = false;
-    btn.textContent = '重複チェックして新しいCSVを作成 →';
+    btn.textContent = '重複チェックしてExcelを作成 →';
   } else {
     btn.disabled = true;
     btn.textContent = 'ファイルを2つ選択してください';
@@ -439,6 +439,7 @@ document.getElementById('runBtn').addEventListener('click', () => {
       rows.push([noDupCSV[i] ?? '', noDupXLSX[i] ?? '']);
     }
     resultRows = rows;
+    resultDupCount = dupCSV.length;
 
     document.getElementById('sCSV').textContent = csvData.length;
     document.getElementById('sXLSX').textContent = xlsxData.length;
@@ -452,7 +453,16 @@ document.getElementById('runBtn').addEventListener('click', () => {
 
 document.getElementById('dlBtn').addEventListener('click', () => {
   if (!resultRows) return;
-  const ws = XLSX.utils.aoa_to_sheet(resultRows);
+
+  // C列に重複ラベルを追加
+  const exportRows = resultRows.map((r, i) => {
+    if (i === 0) return [r[0], r[1], '状態'];
+    return [r[0], r[1], i <= resultDupCount ? '★ 重複' : ''];
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(exportRows);
+  ws['!cols'] = [{wch: 22}, {wch: 22}, {wch: 10}];
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '重複チェック結果');
   XLSX.writeFile(wb, 'result.xlsx');
