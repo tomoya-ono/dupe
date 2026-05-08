@@ -425,14 +425,19 @@ document.getElementById('runBtn').addEventListener('click', () => {
     const dupXLSX = xlsxData.filter(v => csvSet.has(v));
     const noDupXLSX = xlsxData.filter(v => !csvSet.has(v));
 
-    const col1 = [...dupCSV, ...noDupCSV];
-    const col2 = [...dupXLSX, ...noDupXLSX];
-    const maxLen = Math.max(col1.length, col2.length);
-
     const lines = ['CSV_C列,XLSX_C列'];
-    for (let i = 0; i < maxLen; i++) {
-      const a = (col1[i] ?? '').replace(/"/g, '""');
-      const b = (col2[i] ?? '').replace(/"/g, '""');
+
+    // 重複行：同じASINを同じ行に並べる
+    for (let i = 0; i < dupCSV.length; i++) {
+      const a = dupCSV[i].replace(/"/g, '""');
+      lines.push('"' + a + '","' + a + '"');
+    }
+
+    // 非重複：CSV側とXLSX側をそれぞれ後ろに追加
+    const maxNodup = Math.max(noDupCSV.length, noDupXLSX.length);
+    for (let i = 0; i < maxNodup; i++) {
+      const a = (noDupCSV[i] ?? '').replace(/"/g, '""');
+      const b = (noDupXLSX[i] ?? '').replace(/"/g, '""');
       lines.push('"' + a + '","' + b + '"');
     }
     resultCSV = lines.join('\n');
